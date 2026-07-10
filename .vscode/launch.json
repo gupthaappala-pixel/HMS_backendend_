@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-HmsApplication<HMS>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.hms.HmsApplication",
+            "projectName": "HMS",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
