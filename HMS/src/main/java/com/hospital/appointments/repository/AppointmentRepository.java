@@ -21,12 +21,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     long countByAppointmentDateTimeBetween(LocalDateTime start, LocalDateTime end);
     List<Appointment> findByAppointmentDateTimeBetweenOrderByAppointmentDateTimeAsc(LocalDateTime start, LocalDateTime end);
 
-    @Query("SELECT COUNT(a) FROM Appointment a WHERE DATE(a.appointmentDateTime) = CURRENT_DATE")
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE CAST(a.appointmentDateTime AS LocalDate) = local date")
     long countTodaysAppointments();
 
     @Query(
         "SELECT HOUR(a.appointmentDateTime) as hr, COUNT(a) as cnt " +
-        "FROM Appointment a WHERE DATE(a.appointmentDateTime) = CURRENT_DATE " +
+        "FROM Appointment a WHERE CAST(a.appointmentDateTime AS LocalDate) = local date " +
         "GROUP BY HOUR(a.appointmentDateTime) ORDER BY HOUR(a.appointmentDateTime)"
     )
     List<Object[]> countTodayAppointmentsByHour();

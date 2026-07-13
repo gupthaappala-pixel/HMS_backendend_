@@ -11,7 +11,10 @@ import java.util.List;
 
 public interface PharmacyService {
     MedicineResponse createMedicine(MedicineRequest request);
+    MedicineResponse updateMedicine(Long id, MedicineRequest request);
     List<MedicineResponse> getAllMedicines();
+    void importMedicinesFromExcel(org.springframework.web.multipart.MultipartFile file);
+    byte[] exportInventoryToExcel();
     MedicineInventoryResponse addInventory(MedicineInventoryRequest request);
     List<MedicineInventoryResponse> getFullInventory();
     List<MedicineInventoryResponse> getLowStockItems();

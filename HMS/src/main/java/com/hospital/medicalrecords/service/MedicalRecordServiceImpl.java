@@ -275,4 +275,112 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
                 record.getRecordDate()
         );
     }
+
+    @Override
+    @Transactional
+    public void saveLabTestsForAppointment(Long appointmentId, List<LabTestOrderRequest> labTests, String doctorUsername) {
+        Doctor doctor = doctorRepository.findByUserUsername(doctorUsername)
+                .orElseThrow(() -> new RuntimeException("Doctor not found for username: " + doctorUsername));
+                
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found: " + appointmentId));
+                
+        Patient patient = appointment.getPatient();
+        if (patient == null) {
+            throw new RuntimeException("Patient not found for appointment: " + appointmentId);
+        }
+
+        if (appointment.getStatus() == com.hospital.common.enums.AppointmentStatus.COMPLETED) {
+            throw new IllegalStateException("This appointment has already been finalized. No further modifications are allowed.");
+        }
+
+        if (labTests != null && !labTests.isEmpty()) {
+            for (LabTestOrderRequest orderReq : labTests) {
+                LaboratoryTest labTest = labTestRepository.findById(orderReq.getTestId())
+                        .orElseThrow(() -> new RuntimeException("Lab test not found: " + orderReq.getTestId()));
+                
+                LaboratoryReport report = new LaboratoryReport(
+                        patient, doctor, labTest, null, null, LaboratoryReportStatus.PENDING, orderReq.getRemarks()
+                );
+                labReportRepository.save(report);
+            }
+            
+            // Notify patient
+            if (patient.getUser() != null) {
+                notificationService.createSystemNotification(
+                    patient.getUser().getUsername(),
+                    "Laboratory Tests Ordered",
+                    "Your doctor has prescribed new laboratory tests. Please visit the laboratory department."
+                );
+            }
+            
+            // Notify laboratory staff
+            triggerLabNotification("New Laboratory Request",
+                String.format("New lab test(s) requested for patient %s. Please review and process.",
+                    patient.getUser() != null ? patient.getUser().getFirstName() + " " + patient.getUser().getLastName() : "Unknown"));
+        }
+    }
+
+    @Override
+    @Transactional
+    public void savePrescriptionsForAppointment(Long appointmentId, List<PrescriptionItemRequest> medicines, String doctorUsername) {
+        Doctor doctor = doctorRepository.findByUserUsername(doctorUsername)
+                .orElseThrow(() -> new RuntimeException("Doctor not found for username: " + doctorUsername));
+                
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found: " + appointmentId));
+                
+        Patient patient = appointment.getPatient();
+        if (patient == null) {
+            throw new RuntimeException("Patient not found for appointment: " + appointmentId);
+        }
+
+        if (appointment.getStatus() == com.hospital.common.enums.AppointmentStatus.COMPLETED) {
+            throw new IllegalStateException("This appointment has already been finalized. No further modifications are allowed.");
+        }
+
+        if (medicines != null && !medicines.isEmpty()) {
+            Prescription prescription = new Prescription(patient, doctor, null, PrescriptionStatus.PENDING);
+            Prescription savedPrescription = prescriptionRepository.save(prescription);
+            
+            for (PrescriptionItemRequest itemReq : medicines) {
+                Medicine medicine = medicineRepository.findById(itemReq.getMedicineId())
+                        .orElseThrow(() -> new RuntimeException("Medicine not found: " + itemReq.getMedicineId()));
+                PrescriptionItem item = new PrescriptionItem(
+                        savedPrescription, medicine, itemReq.getDosage(), 
+                        itemReq.getFrequency(), itemReq.getDurationDays(), itemReq.getQuantity()
+                );
+                prescriptionItemRepository.save(item);
+            }
+            
+            // Update visit status to PHARMACY_PROCESSING
+            appointment.setVisitStatus(com.hospital.common.enums.PatientVisitStatus.PHARMACY_PROCESSING);
+            appointmentRepository.save(appointment);
+
+            // Notify patient about new prescription
+            if (patient.getUser() != null) {
+                notificationService.createSystemNotification(
+                    patient.getUser().getUsername(),
+                    "New Prescription Available",
+                    "Your doctor has prescribed new medicines. Please visit the Pharmacy department for dispensing."
+                );
+            }
+            
+            // Notify pharmacy staff
+            triggerPharmacyNotification("New Prescription Ready",
+                String.format("A new prescription with %d item(s) is ready for patient %s. Please review and dispense.",
+                    medicines.size(),
+                    patient.getUser() != null ? patient.getUser().getFirstName() + " " + patient.getUser().getLastName() : "Unknown"));
+        }
+    }
+
+    private void triggerLabNotification(String title, String message) {
+        List<User> technicians = userRepository.findAll().stream()
+                .filter(u -> u.getRole().name().equals("ROLE_LAB_TECHNICIAN") || u.getRole().name().equals("ROLE_ADMIN"))
+                .collect(Collectors.toList());
+
+        for (User u : technicians) {
+            notificationService.createSystemNotification(u.getUsername(), title, message);
+        }
+    }
 }

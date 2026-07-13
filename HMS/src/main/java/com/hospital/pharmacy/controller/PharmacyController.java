@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -41,29 +42,43 @@ public class PharmacyController {
         return ResponseEntity.ok(responses);
     }
 
+    @PutMapping("/medicines/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST','INVENTORY_MANAGER')")
+    public ResponseEntity<MedicineResponse> updateMedicine(@PathVariable Long id, @Valid @RequestBody MedicineRequest request) {
+        MedicineResponse response = pharmacyService.updateMedicine(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/medicines/import")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST','INVENTORY_MANAGER')")
+    public ResponseEntity<String> importMedicines(@RequestParam("file") MultipartFile file) {
+        pharmacyService.importMedicinesFromExcel(file);
+        return ResponseEntity.ok("Medicines successfully imported from Excel.");
+    }
+
     @PostMapping("/inventory")
-    @PreAuthorize("hasAnyRole('PHARMACIST','INVENTORY_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST','INVENTORY_MANAGER')")
     public ResponseEntity<MedicineInventoryResponse> addInventory(@Valid @RequestBody MedicineInventoryRequest request) {
         MedicineInventoryResponse response = pharmacyService.addInventory(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping("/inventory")
-    @PreAuthorize("hasAnyRole('PHARMACIST','INVENTORY_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST','INVENTORY_MANAGER')")
     public ResponseEntity<List<MedicineInventoryResponse>> getFullInventory() {
         List<MedicineInventoryResponse> responses = pharmacyService.getFullInventory();
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/inventory/low-stock")
-    @PreAuthorize("hasAnyRole('PHARMACIST','INVENTORY_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST','INVENTORY_MANAGER')")
     public ResponseEntity<List<MedicineInventoryResponse>> getLowStockItems() {
         List<MedicineInventoryResponse> responses = pharmacyService.getLowStockItems();
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/inventory/expired")
-    @PreAuthorize("hasAnyRole('PHARMACIST','INVENTORY_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST','INVENTORY_MANAGER')")
     public ResponseEntity<List<MedicineInventoryResponse>> getExpiredItems() {
         List<MedicineInventoryResponse> responses = pharmacyService.getExpiredItems();
         return ResponseEntity.ok(responses);
@@ -113,5 +128,15 @@ public class PharmacyController {
         PharmacyInvoicePaymentStatus paymentStatus = PharmacyInvoicePaymentStatus.valueOf(status.toUpperCase());
         PharmacyInvoiceResponse response = pharmacyService.updatePaymentStatus(id, paymentStatus);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/inventory/export")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST','INVENTORY_MANAGER')")
+    public ResponseEntity<byte[]> exportInventory() {
+        byte[] data = pharmacyService.exportInventoryToExcel();
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=pharmacy_inventory.xlsx")
+                .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(data);
     }
 }

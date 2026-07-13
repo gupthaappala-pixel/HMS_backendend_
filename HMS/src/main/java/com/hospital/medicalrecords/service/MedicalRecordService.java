@@ -10,4 +10,6 @@ public interface MedicalRecordService {
     MedicalRecordResponse createConsultation(com.hospital.medicalrecords.dto.ConsultationRequest request, String doctorUsername);
     List<MedicalRecordResponse> getRecordsForPatient(Long patientId);
     List<MedicalRecordResponse> getMyRecords(String username);
+    void saveLabTestsForAppointment(Long appointmentId, List<com.hospital.medicalrecords.dto.LabTestOrderRequest> labTests, String doctorUsername);
+    void savePrescriptionsForAppointment(Long appointmentId, List<com.hospital.medicalrecords.dto.PrescriptionItemRequest> medicines, String doctorUsername);
 }

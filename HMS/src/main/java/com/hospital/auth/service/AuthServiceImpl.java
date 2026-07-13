@@ -15,6 +15,7 @@ import com.hospital.doctors.repository.DoctorRepository;
 import com.hospital.doctors.entity.Doctor;
 import com.hospital.patients.repository.PatientRepository;
 import com.hospital.patients.entity.Patient;
+import com.hospital.departments.entity.Department;
 import com.hospital.departments.repository.DepartmentRepository;
 import com.hospital.nurses.repository.NurseRepository;
 import com.hospital.nurses.entity.Nurse;
@@ -22,6 +23,8 @@ import com.hospital.pharmacy.repository.PharmacistRepository;
 import com.hospital.pharmacy.entity.Pharmacist;
 import com.hospital.laboratory.repository.LabTechnicianRepository;
 import com.hospital.laboratory.entity.LabTechnician;
+import com.hospital.departments.entity.Specialization;
+import com.hospital.departments.repository.SpecializationRepository;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -51,13 +54,15 @@ public class AuthServiceImpl implements AuthService {
     private final NurseRepository nurseRepository;
     private final PharmacistRepository pharmacistRepository;
     private final LabTechnicianRepository labTechnicianRepository;
+    private final SpecializationRepository specializationRepository;
 
     public AuthServiceImpl(AuthenticationManager authenticationManager, UserRepository userRepository,
                            PasswordEncoder passwordEncoder, JwtService jwtService,
                            RefreshTokenService refreshTokenService, AuditLogService auditLogService,
                            DoctorRepository doctorRepository, PatientRepository patientRepository,
                            DepartmentRepository departmentRepository, NurseRepository nurseRepository,
-                           PharmacistRepository pharmacistRepository, LabTechnicianRepository labTechnicianRepository) {
+                           PharmacistRepository pharmacistRepository, LabTechnicianRepository labTechnicianRepository,
+                           SpecializationRepository specializationRepository) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -70,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
         this.nurseRepository = nurseRepository;
         this.pharmacistRepository = pharmacistRepository;
         this.labTechnicianRepository = labTechnicianRepository;
+        this.specializationRepository = specializationRepository;
     }
 
     @Override
@@ -135,17 +141,32 @@ public class AuthServiceImpl implements AuthService {
         if (result.getRole() == Role.ROLE_DOCTOR) {
             Doctor doctor = new Doctor();
             doctor.setUser(result);
-            doctor.setSpecialization(registerRequest.getSpecialization() != null ? registerRequest.getSpecialization() : "General");
+            String specName = registerRequest.getSpecialization() != null ? registerRequest.getSpecialization() : "General";
+            doctor.setSpecialization(specName);
             doctor.setExperienceYears(registerRequest.getExperienceYears());
             doctor.setConsultationFee(registerRequest.getConsultationFee());
             doctor.setPhone(registerRequest.getPhone());
             doctor.setLicenseNumber("N/A-" + java.util.UUID.randomUUID().toString().substring(0, 8));
             
+            Department department = null;
             if (registerRequest.getDepartmentId() != null) {
-                departmentRepository.findById(registerRequest.getDepartmentId()).ifPresent(doctor::setDepartment);
+                department = departmentRepository.findById(registerRequest.getDepartmentId()).orElse(null);
+                doctor.setDepartment(department);
             }
             
             doctorRepository.save(doctor);
+
+            // Register custom specialization in the list if not exists
+            if (specName != null && !specName.trim().isEmpty() && !specName.equalsIgnoreCase("General")) {
+                String trimmedSpec = specName.trim();
+                Department finalDept = department;
+                Long deptId = finalDept != null ? finalDept.getId() : null;
+                boolean exists = specializationRepository.findByNameIgnoreCaseAndDepartmentId(trimmedSpec, deptId).isPresent();
+                if (!exists) {
+                    Specialization customSpec = new Specialization(trimmedSpec, "Custom Specialization added during registration", finalDept);
+                    specializationRepository.save(customSpec);
+                }
+            }
         } else if (result.getRole() == Role.ROLE_PATIENT) {
             Patient patient = new Patient();
             patient.setUser(result);
@@ -174,10 +195,21 @@ public class AuthServiceImpl implements AuthService {
         } else if (result.getRole() == Role.ROLE_LAB_TECHNICIAN) {
             LabTechnician lab = new LabTechnician();
             lab.setUser(result);
-            lab.setSpecialization(registerRequest.getSpecialization());
+            String specName = registerRequest.getSpecialization();
+            lab.setSpecialization(specName);
             lab.setCertification(registerRequest.getCertification());
             lab.setPhone(registerRequest.getPhone());
             labTechnicianRepository.save(lab);
+
+            // Register custom specialization in the list if not exists
+            if (specName != null && !specName.trim().isEmpty()) {
+                String trimmedSpec = specName.trim();
+                boolean exists = specializationRepository.findByNameIgnoreCase(trimmedSpec).isPresent();
+                if (!exists) {
+                    Specialization customSpec = new Specialization(trimmedSpec, "Custom Specialization added during lab technician registration", null);
+                    specializationRepository.save(customSpec);
+                }
+            }
         }
 
         auditLogService.log(result.getUsername(), "USER_REGISTRATION", "Successfully registered with role: " + result.getRole(), ipAddress);

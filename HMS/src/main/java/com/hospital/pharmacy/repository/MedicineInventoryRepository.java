@@ -16,4 +16,6 @@ public interface MedicineInventoryRepository extends JpaRepository<MedicineInven
 
     @Query("SELECT m FROM MedicineInventory m WHERE m.stockQuantity < :threshold")
     List<MedicineInventory> findLowStock(int threshold);
+
+    boolean existsByBatchNumber(String batchNumber);
 }

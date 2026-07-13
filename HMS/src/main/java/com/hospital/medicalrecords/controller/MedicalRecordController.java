@@ -40,6 +40,26 @@ public class MedicalRecordController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PostMapping("/appointments/{appointmentId}/lab-tests")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<String> saveLabTests(
+            @PathVariable Long appointmentId,
+            @RequestBody List<com.hospital.medicalrecords.dto.LabTestOrderRequest> labTests,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        medicalRecordService.saveLabTestsForAppointment(appointmentId, labTests, userDetails.getUsername());
+        return ResponseEntity.ok("Laboratory tests successfully ordered & dispatched.");
+    }
+
+    @PostMapping("/appointments/{appointmentId}/prescriptions")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<String> savePrescriptions(
+            @PathVariable Long appointmentId,
+            @RequestBody List<com.hospital.medicalrecords.dto.PrescriptionItemRequest> medicines,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        medicalRecordService.savePrescriptionsForAppointment(appointmentId, medicines, userDetails.getUsername());
+        return ResponseEntity.ok("Prescription successfully saved & dispatched to Pharmacy.");
+    }
+
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE')")
     public ResponseEntity<List<MedicalRecordResponse>> getPatientRecords(@PathVariable Long patientId) {
