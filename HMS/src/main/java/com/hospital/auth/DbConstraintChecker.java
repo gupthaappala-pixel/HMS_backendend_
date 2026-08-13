@@ -7,7 +7,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.context.annotation.Profile;
+
 @Component
+@Profile("!test")
 public class DbConstraintChecker implements CommandLineRunner {
 
     private final JdbcTemplate jdbcTemplate;

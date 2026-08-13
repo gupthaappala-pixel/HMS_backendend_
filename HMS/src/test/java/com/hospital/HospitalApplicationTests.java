@@ -1,10 +1,10 @@
-package com.hms;
+package com.hospital;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class HmsApplicationTests {
+@SpringBootTest(classes = HospitalApplication.class)
+class HospitalApplicationTests {
 
 	@Test
 	void contextLoads() {
