@@ -4,7 +4,7 @@
 ![Java](https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Spring Security](https://img.shields.io/badge/Spring--Security-JWT-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-Elastic_Beanstalk_%2F_EC2-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![Build](https://img.shields.io/badge/Maven-Passing-000000?style=for-the-badge&logo=apachemaven&logoColor=white)
 
 An enterprise-grade, RESTful backend API for the **Hospital Management System (HMS)** built with Java 17, Spring Boot, Spring Security (JWT authentication), Hibernate/JPA, and PostgreSQL/Supabase.
@@ -22,7 +22,7 @@ An enterprise-grade, RESTful backend API for the **Hospital Management System (H
   - [Environment Configuration](#environment-configuration)
   - [Local Development](#local-development)
   - [Running Unit Tests](#running-unit-tests)
-- [Docker & Cloud Deployment (Render)](#-docker--cloud-deployment-render)
+- [AWS Cloud Deployment](#-aws-cloud-deployment)
 - [API Endpoints Summary](#-api-endpoints-summary)
 - [Security & Role-Based Access Control](#-security--role-based-access-control)
 
@@ -82,8 +82,8 @@ The HMS Backend is engineered around domain-driven micro-packages with clean lay
 | **Persistence** | Spring Data JPA, Hibernate, Liquibase/Flyway |
 | **Database** | PostgreSQL (Production/Supabase), H2 In-Memory (Test Profile) |
 | **Build Tool** | Apache Maven |
-| **Containerization** | Docker, Docker Compose |
-| **Cloud Hosting** | Render (Docker Runtime) |
+| **Cloud Provider** | Amazon Web Services (AWS) |
+| **Cloud Services** | AWS Elastic Beanstalk / AWS EC2, AWS RDS / Supabase |
 
 ---
 
@@ -107,7 +107,6 @@ Upon startup, the embedded [`MasterDataSeeder.java`](file:///d:/HMS/Backend/HMS/
 
 ```
 HMS/
-├── Dockerfile                        # Docker container deployment spec (Java 17)
 ├── pom.xml                           # Maven dependencies & build config
 ├── mvnw / mvnw.cmd                   # Maven wrapper executables
 └── src/
@@ -196,26 +195,60 @@ Backend unit tests run using an isolated H2 in-memory test profile:
 
 ---
 
-## 🐳 Docker & Cloud Deployment (Render)
+## ☁️ AWS Cloud Deployment
 
-This repository includes a production Dockerfile configured for Render and containerized environments.
+The HMS Spring Boot backend is production-ready for deployment on **Amazon Web Services (AWS)** using **AWS Elastic Beanstalk** (managed PaaS) or **AWS EC2** (IaaS).
 
-### 1. Build and Run Docker Image Locally
+### 1. Packaging the Application
+
+Build the production executable JAR package using Maven:
 
 ```bash
-# Build image
-docker build -t hms-backend .
+# On Windows PowerShell
+.\mvnw.cmd clean package -DskipTests
 
-# Run container on port 8080
-docker run -p 8080:8080 -e DB_HOST=your-supabase-db-host hms-backend
+# On Linux / macOS
+./mvnw clean package -DskipTests
 ```
+The compiled executable binary will be generated at `target/HMS-0.0.1-SNAPSHOT.jar`.
 
-### 2. Render Deployment Configuration
+### 2. Option A: AWS Elastic Beanstalk Deployment (Recommended)
 
-- **Runtime:** `Docker`
-- **Root Directory:** `HMS`
-- **Dockerfile Path:** `Dockerfile`
-- **Exposed Port:** `8080`
+1. **Create Elastic Beanstalk Application:**
+   - In AWS Console, go to **Elastic Beanstalk** → **Create Application**.
+   - Platform: **Java** (Corretto 17).
+2. **Upload Artifact:**
+   - Upload `target/HMS-0.0.1-SNAPSHOT.jar`.
+3. **Set Environment Properties:**
+   Configure environment properties under **Configuration → Software**:
+   ```env
+   SERVER_PORT=8080
+   DB_HOST=your-rds-or-supabase-host.amazonaws.com
+   DB_PORT=5432
+   DB_NAME=hms
+   DB_USER=postgres
+   DB_PASS=your-secure-password
+   JWT_SECRET=your-256bit-jwt-secret-key
+   ```
+4. **Deploy & Health Check:** Launch environment and verify health status via `/actuator/health`.
+
+### 3. Option B: AWS EC2 Standalone Deployment
+
+1. **Launch EC2 Instance:**
+   - Launch Ubuntu 22.04 LTS or Amazon Linux 2023 instance (`t3.medium` recommended).
+   - In Security Groups, allow inbound traffic on port `8080`, `80` (HTTP), and `443` (HTTPS).
+2. **Install Java 17:**
+   ```bash
+   sudo apt update && sudo apt install openjdk-17-jre-headless -y
+   ```
+3. **Execute Application:**
+   ```bash
+   nohup java -jar HMS-0.0.1-SNAPSHOT.jar \
+     --spring.profiles.active=prod \
+     --DB_HOST=your-database-host \
+     --DB_USER=postgres \
+     --DB_PASS=your-password > app.log 2>&1 &
+   ```
 
 ---
 
