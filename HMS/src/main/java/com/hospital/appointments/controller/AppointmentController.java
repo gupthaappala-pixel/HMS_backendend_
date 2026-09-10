@@ -11,11 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/appointments")
-<<<<<<< HEAD
 @CrossOrigin(origins = "${app.cors.allowed-origins:http://localhost:3000,https://hospitalmanagemen.health}")
-=======
-@CrossOrigin(origins = "http://localhost:3000")
->>>>>>> origin/main
 public class AppointmentController {
 
     private final AppointmentService appointmentService;

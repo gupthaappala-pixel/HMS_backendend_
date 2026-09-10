@@ -22,19 +22,22 @@ public class MockLlmServiceImpl implements MockLlmService {
     private final PrescriptionItemRepository prescriptionItemRepository;
     private final HospitalKnowledgeBase knowledgeBase;
     private final AiPromptBuilder promptBuilder;
+    private final com.hospital.chatbot.service.ReportZoneAnalyzer reportZoneAnalyzer;
 
     public MockLlmServiceImpl(PatientRepository patientRepository,
                               DoctorRepository doctorRepository,
                               PrescriptionRepository prescriptionRepository,
                               PrescriptionItemRepository prescriptionItemRepository,
                               HospitalKnowledgeBase knowledgeBase,
-                              AiPromptBuilder promptBuilder) {
+                              AiPromptBuilder promptBuilder,
+                              com.hospital.chatbot.service.ReportZoneAnalyzer reportZoneAnalyzer) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.prescriptionRepository = prescriptionRepository;
         this.prescriptionItemRepository = prescriptionItemRepository;
         this.knowledgeBase = knowledgeBase;
         this.promptBuilder = promptBuilder;
+        this.reportZoneAnalyzer = reportZoneAnalyzer;
     }
 
     @Override
@@ -196,6 +199,7 @@ public class MockLlmServiceImpl implements MockLlmService {
         // default assistant welcome response
         return "### Hello! I am your Antigravity AI assistant. 🤖\n\n" +
                 "I am here to help patients navigate hospital services. You can ask me to:\n" +
+                "- 📄 **Upload & Recognize Lab Reports / PDFs** for automatic health zone classification\n" +
                 "- 💊 **Explain prescriptions** or medications (e.g., *'Explain my medicine'*)\n" +
                 "- 🩺 **Find doctors** and specialists (e.g., *'Find a Cardiologist'*)\n" +
                 "- 📅 **Book appointments** instructions (*'How do I book?'*)\n" +
@@ -203,5 +207,44 @@ public class MockLlmServiceImpl implements MockLlmService {
                 "- ❓ **Answer FAQs** (*'What are the visiting hours?'*)\n" +
                 "- 🍏 Provide general health education and wellness tips.\n\n" +
                 "How can I assist you today?";
+    }
+
+    @Override
+    public String processReportUpload(String username, org.springframework.web.multipart.MultipartFile file, String userMessage) {
+        String fileName = (file != null && file.getOriginalFilename() != null) ? file.getOriginalFilename() : "Uploaded_Report.pdf";
+        String extractedText = "";
+
+        if (file != null && !file.isEmpty()) {
+            try {
+                extractedText = new String(file.getBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                extractedText = fileName;
+            }
+        }
+
+        if (userMessage != null && !userMessage.trim().isEmpty()) {
+            extractedText += " " + userMessage;
+        }
+
+        // Analyze using ReportZoneAnalyzer
+        com.hospital.chatbot.service.ReportZoneAnalyzer.AnalysisResult analysis = reportZoneAnalyzer.analyze(
+                fileName.replace(".pdf", "").replace("_", " "),
+                extractedText,
+                "Standard Reference Range",
+                "Uploaded via AI Assistant"
+        );
+
+        String zoneEmoji = "GREEN".equals(analysis.getZoneStatus()) ? "🟢" : ("YELLOW".equals(analysis.getZoneStatus()) ? "🟡" : "🔴");
+        
+        return String.format(
+                "### 📄 AI Document Recognition Analysis\n\n" +
+                "**File**: `%s`\n" +
+                "**Health Risk Zone**: %s **%s ZONE**\n\n" +
+                "### 📊 Clinical Summary:\n%s\n\n" +
+                "### 💡 Actionable Guidance:\n" +
+                "- Review complete details and statistics graphs in your **Health Portal / Lab Reports** tab.\n" +
+                "- *Consult your attending physician if you experience any concerning symptoms.*",
+                fileName, zoneEmoji, analysis.getZoneStatus(), analysis.getAiSummary()
+        );
     }
 }

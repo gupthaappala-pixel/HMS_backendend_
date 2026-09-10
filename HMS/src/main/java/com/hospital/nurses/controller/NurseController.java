@@ -13,11 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/nurses")
-<<<<<<< HEAD
 @CrossOrigin(origins = "${app.cors.allowed-origins:http://localhost:3000,https://hospitalmanagemen.health}")
-=======
-@CrossOrigin(origins = "http://localhost:3000")
->>>>>>> origin/main
 public class NurseController {
 
     private final NurseRepository nurseRepository;

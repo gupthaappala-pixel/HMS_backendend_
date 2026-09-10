@@ -16,11 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
-<<<<<<< HEAD
 @CrossOrigin(origins = "${app.cors.allowed-origins:http://localhost:3000,https://hospitalmanagemen.health}")
-=======
-@CrossOrigin(origins = "http://localhost:3000")
->>>>>>> origin/main
 public class NotificationController {
 
     private final NotificationRepository notificationRepository;
