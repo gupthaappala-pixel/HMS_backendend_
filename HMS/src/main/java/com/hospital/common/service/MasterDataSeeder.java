@@ -320,16 +320,24 @@ public class MasterDataSeeder implements CommandLineRunner {
             return;
         }
 
-        for (int i = 0; i < 20; i++) {
-            Patient patient = patients.get(i % patients.size());
-            Doctor doctor = doctors.get(i % doctors.size());
-            Appointment appt = (appointments.size() > i) ? appointments.get(i) : null;
+        int seededCount = 0;
+
+        for (int i = 0; i < appointments.size() && seededCount < 20; i++) {
+            Appointment appt = appointments.get(i);
+
+            if (appt.getId() != null &&
+                medicalRecordRepository.existsByAppointmentId(appt.getId())) {
+                continue;
+            }
+
+            Patient patient = patients.get(seededCount % patients.size());
+            Doctor doctor = doctors.get(seededCount % doctors.size());
 
             MedicalRecord record = new MedicalRecord(
                 patient,
                 doctor,
                 appt,
-                "Clinical Diagnosis #" + (i + 1) + ": Mild hypertension and fatigue",
+                "Clinical Diagnosis #" + (seededCount + 1) + ": Mild hypertension and fatigue",
                 "Symptoms reported: Headache, fatigue, mild dizziness",
                 "Treatment Plan: Rest, low sodium diet, prescribed Amlodipine 5mg",
                 "Penicillin, Dust Allergies",
@@ -340,9 +348,12 @@ public class MasterDataSeeder implements CommandLineRunner {
                 "COVID-19 Vaccinated, Hepatitis B",
                 "None"
             );
+
             medicalRecordRepository.save(record);
+            seededCount++;
         }
-        System.out.println("✅ Seeded 20 MedicalRecord entries into HMS database!");
+
+        System.out.println("✅ Seeded " + seededCount + " new MedicalRecord entries into HMS database!");
     }
 
     private void seedPrescriptions() {
