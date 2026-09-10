@@ -4,7 +4,10 @@ import com.hospital.security.CustomAuthenticationEntryPoint;
 import com.hospital.security.CustomUserDetailsService;
 import com.hospital.security.JwtFilter;
 import com.hospital.security.JwtService;
+<<<<<<< HEAD
 import org.springframework.beans.factory.annotation.Value;
+=======
+>>>>>>> origin/main
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,17 +26,23 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.Collections;
+<<<<<<< HEAD
 import java.util.List;
 import java.util.stream.Collectors;
+=======
+>>>>>>> origin/main
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
+<<<<<<< HEAD
     @Value("${app.cors.allowed-origins:http://localhost:3000,https://hospitalmanagemen.health}")
     private String allowedOrigins;
 
+=======
+>>>>>>> origin/main
     private final CustomUserDetailsService userDetailsService;
     private final JwtService jwtService;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
@@ -81,11 +90,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+<<<<<<< HEAD
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
         configuration.setAllowedOrigins(origins);
+=======
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
+>>>>>>> origin/main
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
         configuration.setExposedHeaders(Collections.singletonList("Authorization"));

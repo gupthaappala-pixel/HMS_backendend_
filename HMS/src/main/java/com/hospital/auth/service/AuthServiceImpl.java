@@ -26,7 +26,10 @@ import com.hospital.laboratory.entity.LabTechnician;
 import com.hospital.departments.entity.Specialization;
 import com.hospital.departments.repository.SpecializationRepository;
 
+<<<<<<< HEAD
 import org.springframework.beans.factory.annotation.Value;
+=======
+>>>>>>> origin/main
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -43,9 +46,12 @@ import java.util.Map;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+<<<<<<< HEAD
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
+=======
+>>>>>>> origin/main
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -298,12 +304,20 @@ public class AuthServiceImpl implements AuthService {
         
         System.out.println("==========================================================");
         System.out.println("PASSWORD RESET LINK FOR " + email);
+<<<<<<< HEAD
         System.out.println(frontendUrl + "/reset-password/" + token);
+=======
+        System.out.println("http://localhost:3000/reset-password/" + token);
+>>>>>>> origin/main
         System.out.println("==========================================================");
         
         Map<String, String> response = new HashMap<>();
         response.put("message", "If an account exists, a password reset link has been sent.");
+<<<<<<< HEAD
         response.put("devResetLink", frontendUrl + "/reset-password/" + token); // Mock email
+=======
+        response.put("devResetLink", "http://localhost:3000/reset-password/" + token); // Mock email
+>>>>>>> origin/main
         return response;
     }
 

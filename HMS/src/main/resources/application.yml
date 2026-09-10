@@ -6,9 +6,12 @@ spring:
 
 server:
   port: 8080
+<<<<<<< HEAD
 
 app:
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,https://hospitalmanagemen.health}
+=======
+>>>>>>> origin/main

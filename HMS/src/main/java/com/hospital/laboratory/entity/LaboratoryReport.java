@@ -56,6 +56,18 @@ public class LaboratoryReport {
     @Column(name = "report_file_url", length = 500)
     private String reportFileUrl;
 
+    @Size(max = 30)
+    @Column(name = "zone_status", length = 30)
+    private String zoneStatus; // GREEN, YELLOW, RED
+
+    @Size(max = 2000)
+    @Column(name = "ai_summary", length = 2000)
+    private String aiSummary;
+
+    @Size(max = 2000)
+    @Column(name = "health_metrics_json", length = 2000)
+    private String healthMetricsJson;
+
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -162,5 +174,29 @@ public class LaboratoryReport {
 
     public void setReportFileUrl(String reportFileUrl) {
         this.reportFileUrl = reportFileUrl;
+    }
+
+    public String getZoneStatus() {
+        return zoneStatus;
+    }
+
+    public void setZoneStatus(String zoneStatus) {
+        this.zoneStatus = zoneStatus;
+    }
+
+    public String getAiSummary() {
+        return aiSummary;
+    }
+
+    public void setAiSummary(String aiSummary) {
+        this.aiSummary = aiSummary;
+    }
+
+    public String getHealthMetricsJson() {
+        return healthMetricsJson;
+    }
+
+    public void setHealthMetricsJson(String healthMetricsJson) {
+        this.healthMetricsJson = healthMetricsJson;
     }
 }

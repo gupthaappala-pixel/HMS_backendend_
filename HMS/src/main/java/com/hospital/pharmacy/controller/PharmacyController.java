@@ -19,7 +19,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/pharmacy")
+<<<<<<< HEAD
 @CrossOrigin(origins = "${app.cors.allowed-origins:http://localhost:3000,https://hospitalmanagemen.health}")
+=======
+@CrossOrigin(origins = "http://localhost:3000")
+>>>>>>> origin/main
 public class PharmacyController {
 
     private final PharmacyService pharmacyService;

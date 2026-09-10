@@ -18,7 +18,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/prescriptions")
+<<<<<<< HEAD
 @CrossOrigin(origins = "${app.cors.allowed-origins:http://localhost:3000,https://hospitalmanagemen.health}")
+=======
+@CrossOrigin(origins = "http://localhost:3000")
+>>>>>>> origin/main
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;

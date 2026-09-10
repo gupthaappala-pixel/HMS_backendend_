@@ -21,11 +21,14 @@ public class LaboratoryReportResponse {
     private String doctorRemarks;
     private String techRemarks;
     private String reportFileUrl;
+    private String zoneStatus;
+    private String aiSummary;
+    private String healthMetricsJson;
 
     public LaboratoryReportResponse() {
     }
 
-    public LaboratoryReportResponse(Long id, Long patientId, String patientName, Long doctorId, String doctorName, Long labTestId, String labTestName, String labTestCode, String referenceRange, Double cost, LocalDateTime testDate, String resultValue, String comments, LaboratoryReportStatus status, String doctorRemarks, String techRemarks, String reportFileUrl) {
+    public LaboratoryReportResponse(Long id, Long patientId, String patientName, Long doctorId, String doctorName, Long labTestId, String labTestName, String labTestCode, String referenceRange, Double cost, LocalDateTime testDate, String resultValue, String comments, LaboratoryReportStatus status, String doctorRemarks, String techRemarks, String reportFileUrl, String zoneStatus, String aiSummary, String healthMetricsJson) {
         this.id = id;
         this.patientId = patientId;
         this.patientName = patientName;
@@ -43,6 +46,9 @@ public class LaboratoryReportResponse {
         this.doctorRemarks = doctorRemarks;
         this.techRemarks = techRemarks;
         this.reportFileUrl = reportFileUrl;
+        this.zoneStatus = zoneStatus;
+        this.aiSummary = aiSummary;
+        this.healthMetricsJson = healthMetricsJson;
     }
 
     public Long getId() {
@@ -179,5 +185,29 @@ public class LaboratoryReportResponse {
 
     public void setReportFileUrl(String reportFileUrl) {
         this.reportFileUrl = reportFileUrl;
+    }
+
+    public String getZoneStatus() {
+        return zoneStatus;
+    }
+
+    public void setZoneStatus(String zoneStatus) {
+        this.zoneStatus = zoneStatus;
+    }
+
+    public String getAiSummary() {
+        return aiSummary;
+    }
+
+    public void setAiSummary(String aiSummary) {
+        this.aiSummary = aiSummary;
+    }
+
+    public String getHealthMetricsJson() {
+        return healthMetricsJson;
+    }
+
+    public void setHealthMetricsJson(String healthMetricsJson) {
+        this.healthMetricsJson = healthMetricsJson;
     }
 }

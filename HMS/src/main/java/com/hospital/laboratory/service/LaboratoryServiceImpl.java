@@ -31,6 +31,7 @@ public class LaboratoryServiceImpl implements LaboratoryService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final com.hospital.chatbot.service.ReportZoneAnalyzer reportZoneAnalyzer;
 
     public LaboratoryServiceImpl(LaboratoryTestRepository laboratoryTestRepository,
                                  LaboratoryReportRepository laboratoryReportRepository,
@@ -38,7 +39,8 @@ public class LaboratoryServiceImpl implements LaboratoryService {
                                  DoctorRepository doctorRepository,
                                  UserRepository userRepository,
                                  NotificationService notificationService,
-                                 AuditLogService auditLogService) {
+                                 AuditLogService auditLogService,
+                                 com.hospital.chatbot.service.ReportZoneAnalyzer reportZoneAnalyzer) {
         this.laboratoryTestRepository = laboratoryTestRepository;
         this.laboratoryReportRepository = laboratoryReportRepository;
         this.patientRepository = patientRepository;
@@ -46,6 +48,7 @@ public class LaboratoryServiceImpl implements LaboratoryService {
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.auditLogService = auditLogService;
+        this.reportZoneAnalyzer = reportZoneAnalyzer;
     }
 
     @Override
@@ -190,10 +193,20 @@ public class LaboratoryServiceImpl implements LaboratoryService {
         report.setTechRemarks(techRemarks);
         report.setStatus(LaboratoryReportStatus.COMPLETED);
         
-        // Mock file upload: In a real app, save 'file' to disk/S3 and get URL
         if (file != null && !file.isEmpty()) {
             report.setReportFileUrl("/uploads/lab_reports/" + file.getOriginalFilename());
         }
+
+        // Run AI Clinical Zone Analysis
+        com.hospital.chatbot.service.ReportZoneAnalyzer.AnalysisResult analysis = reportZoneAnalyzer.analyze(
+                report.getLabTest().getTestName(),
+                resultValue,
+                report.getLabTest().getReferenceRange(),
+                techRemarks
+        );
+        report.setZoneStatus(analysis.getZoneStatus());
+        report.setAiSummary(analysis.getAiSummary());
+        report.setHealthMetricsJson(analysis.getHealthMetricsJson());
 
         LaboratoryReport saved = laboratoryReportRepository.save(report);
 
@@ -203,27 +216,27 @@ public class LaboratoryServiceImpl implements LaboratoryService {
         auditLogService.log(
                 "SYSTEM",
                 "LAB_RESULT_RECORDED",
-                String.format("Uploaded result '%s' for test: %s, Patient: %s", resultValue, report.getLabTest().getTestName(), patientName),
+                String.format("Uploaded result '%s' [%s ZONE] for test: %s, Patient: %s", resultValue, analysis.getZoneStatus(), report.getLabTest().getTestName(), patientName),
                 "0.0.0.0"
         );
 
-        // Notify patient
+        // Notify patient with AI summary and Zone Status
         if (report.getPatient().getUser() != null) {
+            String zoneEmoji = "GREEN".equals(analysis.getZoneStatus()) ? "🟢" : ("YELLOW".equals(analysis.getZoneStatus()) ? "🟡" : "🔴");
             notificationService.createSystemNotification(
                     report.getPatient().getUser().getUsername(),
-                    "Laboratory Results Completed",
-                    String.format("Your laboratory report for '%s' is completed. Result: %s. Please review details in health portal.",
-                            report.getLabTest().getTestName(), resultValue)
+                    "Laboratory Results Completed " + zoneEmoji,
+                    String.format("%s. %s", zoneEmoji + " " + analysis.getZoneStatus() + " ZONE: " + report.getLabTest().getTestName(), analysis.getAiSummary())
             );
         }
 
-        // Notify doctor
+        // Notify doctor with AI summary and Zone Status
         if (report.getDoctor().getUser() != null) {
+            String zoneEmoji = "GREEN".equals(analysis.getZoneStatus()) ? "🟢" : ("YELLOW".equals(analysis.getZoneStatus()) ? "🟡" : "🔴");
             notificationService.createSystemNotification(
                     report.getDoctor().getUser().getUsername(),
-                    "Laboratory Results Completed",
-                    String.format("Diagnostic test '%s' is completed for patient %s. Result: %s.",
-                            report.getLabTest().getTestName(), patientName, resultValue)
+                    "Laboratory Results Completed " + zoneEmoji,
+                    String.format("Patient %s — %s (%s). %s", patientName, report.getLabTest().getTestName(), zoneEmoji + " " + analysis.getZoneStatus(), analysis.getAiSummary())
             );
         }
 
@@ -244,6 +257,17 @@ public class LaboratoryServiceImpl implements LaboratoryService {
         report.setComments(request.getComments());
         report.setStatus(LaboratoryReportStatus.COMPLETED);
 
+        // Run AI Clinical Zone Analysis
+        com.hospital.chatbot.service.ReportZoneAnalyzer.AnalysisResult analysis = reportZoneAnalyzer.analyze(
+                report.getLabTest().getTestName(),
+                request.getResultValue(),
+                report.getLabTest().getReferenceRange(),
+                request.getComments()
+        );
+        report.setZoneStatus(analysis.getZoneStatus());
+        report.setAiSummary(analysis.getAiSummary());
+        report.setHealthMetricsJson(analysis.getHealthMetricsJson());
+
         LaboratoryReport saved = laboratoryReportRepository.save(report);
 
         // Audit Log
@@ -252,27 +276,27 @@ public class LaboratoryServiceImpl implements LaboratoryService {
         auditLogService.log(
                 "SYSTEM",
                 "LAB_RESULT_RECORDED",
-                String.format("Recorded result '%s' for test: %s, Patient: %s", request.getResultValue(), report.getLabTest().getTestName(), patientName),
+                String.format("Recorded result '%s' [%s ZONE] for test: %s, Patient: %s", request.getResultValue(), analysis.getZoneStatus(), report.getLabTest().getTestName(), patientName),
                 "0.0.0.0"
         );
 
-        // Notify patient
+        // Notify patient with AI summary and Zone Status
         if (report.getPatient().getUser() != null) {
+            String zoneEmoji = "GREEN".equals(analysis.getZoneStatus()) ? "🟢" : ("YELLOW".equals(analysis.getZoneStatus()) ? "🟡" : "🔴");
             notificationService.createSystemNotification(
                     report.getPatient().getUser().getUsername(),
-                    "Laboratory Results Completed",
-                    String.format("Your laboratory report for '%s' is completed. Result: %s. Please review details in health portal.",
-                            report.getLabTest().getTestName(), request.getResultValue())
+                    "Laboratory Results Completed " + zoneEmoji,
+                    String.format("%s %s ZONE: %s. %s", zoneEmoji, analysis.getZoneStatus(), report.getLabTest().getTestName(), analysis.getAiSummary())
             );
         }
 
-        // Notify doctor
+        // Notify doctor with AI summary and Zone Status
         if (report.getDoctor().getUser() != null) {
+            String zoneEmoji = "GREEN".equals(analysis.getZoneStatus()) ? "🟢" : ("YELLOW".equals(analysis.getZoneStatus()) ? "🟡" : "🔴");
             notificationService.createSystemNotification(
                     report.getDoctor().getUser().getUsername(),
-                    "Laboratory Results Completed",
-                    String.format("Diagnostic test '%s' is completed for patient %s. Result: %s.",
-                            report.getLabTest().getTestName(), patientName, request.getResultValue())
+                    "Laboratory Results Completed " + zoneEmoji,
+                    String.format("Patient %s — %s (%s). %s", patientName, report.getLabTest().getTestName(), zoneEmoji + " " + analysis.getZoneStatus(), analysis.getAiSummary())
             );
         }
 
@@ -323,7 +347,10 @@ public class LaboratoryServiceImpl implements LaboratoryService {
                 r.getStatus(),
                 r.getDoctorRemarks(),
                 r.getTechRemarks(),
-                r.getReportFileUrl()
+                r.getReportFileUrl(),
+                r.getZoneStatus(),
+                r.getAiSummary(),
+                r.getHealthMetricsJson()
         );
     }
 }
